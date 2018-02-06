@@ -106,7 +106,7 @@ DynMat::DynMat(int narg, char **arg)
   memory->create(DM_q, fftdim,fftdim,"DynMat:DM_q");
 
   // read all dynamical matrix info into DM_all
-  if ( fread(DM_all[0], sizeof(doublecomplex), npt*fftdim2, fp) != size_t(npt*fftdim2)){
+  if ( fread(DM_all[0], sizeof(MKL_Complex16), npt*fftdim2, fp) != size_t(npt*fftdim2)){
     printf("\nError while reading the DM from file: %s\n", binfile);
     fclose(fp);
     exit(1);
@@ -140,8 +140,8 @@ DynMat::DynMat(int narg, char **arg)
     for (int idim = 0; idim < fftdim; ++idim)
     for (int jdim = 0; jdim < fftdim; ++jdim){
       double inv_mass = M_inv_sqrt[idim/sysdim]*M_inv_sqrt[jdim/sysdim];
-      DM_all[idq][ndim].r *= inv_mass;
-      DM_all[idq][ndim].i *= inv_mass;
+      DM_all[idq][ndim].real *= inv_mass;
+      DM_all[idq][ndim].imag *= inv_mass;
       ndim++;
     }
   }
@@ -198,7 +198,7 @@ void DynMat::writeDMq(double *q)
   fprintf(fp,"# q = [%lg %lg %lg]\n", q[0], q[1], q[2]);
 
   for (int i = 0; i < fftdim; ++i){
-    for (int j = 0; j < fftdim; ++j) fprintf(fp,"%lg %lg\t", DM_q[i][j].r, DM_q[i][j].i);
+    for (int j = 0; j < fftdim; ++j) fprintf(fp,"%lg %lg\t", DM_q[i][j].real, DM_q[i][j].imag);
     fprintf(fp,"\n");
   }
   fprintf(fp,"\n");
@@ -215,7 +215,7 @@ void DynMat::writeDMq(double *q, const double qr, FILE *fp)
   fprintf(fp, "%lg %lg %lg %lg ", q[0], q[1], q[2], qr);
 
   for (int i = 0; i < fftdim; ++i)
-  for (int j = 0; j < fftdim; ++j) fprintf(fp,"%lg %lg\t", DM_q[i][j].r, DM_q[i][j].i);
+  for (int j = 0; j < fftdim; ++j) fprintf(fp,"%lg %lg\t", DM_q[i][j].real, DM_q[i][j].imag);
 
   fprintf(fp,"\n");
 return;
@@ -229,25 +229,31 @@ return;
 int DynMat::geteigen(double *egv, int flag)
 {
   char jobz, uplo;
-  integer n, lda, lwork, lrwork, *iwork, liwork, info;
-  doublecomplex *work;
-  doublereal *w = &egv[0], *rwork;
+  //integer n, lda, lwork, lrwork, *iwork, liwork, info;
+  int n, lda, info;
+  //doublereal *w = &egv[0], *rwork;
+  //
+  double* w = &egv[0];
 
   n     = fftdim;
   if (flag) jobz = 'V';
   else jobz = 'N';
 
   uplo = 'U';
-  lwork = (n+2)*n;
-  lrwork = 1 + (5+n+n)*n;
-  liwork = 3 + 5*n;
+  //lwork = (n+2)*n;
+  //lrwork = 1 + (5+n+n)*n;
+  //liwork = 3 + 5*n;
+
   lda    = n;
 
-  memory->create(work,  lwork,  "geteigen:work");
-  memory->create(rwork, lrwork, "geteigen:rwork");
-  memory->create(iwork, liwork, "geteigen:iwork");
+  //memory->create(work,  lwork,  "geteigen:work");
+  //memory->create(rwork, lrwork, "geteigen:rwork");
+  //memory->create(iwork, liwork, "geteigen:iwork");
 
-  zheevd_(&jobz, &uplo, &n, DM_q[0], &lda, w, work, &lwork, rwork, &lrwork, iwork, &liwork, &info);
+  //zheevd_(&jobz, &uplo, &n, DM_q[0], &lda, w, work, &lwork, rwork, &lrwork, iwork, &liwork, &info);
+
+	info = LAPACKE_zheevd( LAPACK_ROW_MAJOR, jobz, uplo, n, DM_q[0], lda, w );
+	//info = LAPACKE_zheevd( LAPACK_COL_MAJOR, jobz, uplo, n, DM_q[0], lda, w );
  
   // to get w instead of w^2; and convert w into v (THz hopefully)
   for (int i = 0; i < n; ++i){
@@ -257,9 +263,9 @@ int DynMat::geteigen(double *egv, int flag)
     w[i] *= eml2f;
   }
 
-  memory->destroy(work);
-  memory->destroy(rwork);
-  memory->destroy(iwork);
+  //memory->destroy(work);
+  //memory->destroy(rwork);
+  //memory->destroy(iwork);
 
 return info;
 }
@@ -350,12 +356,12 @@ void DynMat::EnforceASR()
         double sum = 0.;
         for (int kp = 0; kp < nucell; ++kp){
           int idx = (k*sysdim+a)*fftdim+kp*sysdim+b;
-          sum += DM_all[0][idx].r;
+          sum += DM_all[0][idx].real;
         }
         sum /= double(nucell);
         for (int kp = 0; kp < nucell; ++kp){
           int idx = (k*sysdim+a)*fftdim+kp*sysdim+b;
-          DM_all[0][idx].r -= sum;
+          DM_all[0][idx].real -= sum;
         }
       }
     }
@@ -368,8 +374,8 @@ void DynMat::EnforceASR()
       for (int b = 0; b < sysdim; ++b){
         int idx = (k*sysdim+a)*fftdim+kp*sysdim+b;
         int jdx = (kp*sysdim+b)*fftdim+k*sysdim+a;
-        csum = (DM_all[0][idx].r + DM_all[0][jdx].r )*0.5;
-        DM_all[0][idx].r = DM_all[0][jdx].r = csum;
+        csum = (DM_all[0][idx].real + DM_all[0][jdx].real )*0.5;
+        DM_all[0][idx].real = DM_all[0][jdx].real = csum;
       }
     }
   }
@@ -381,14 +387,14 @@ void DynMat::EnforceASR()
       double sum = 0.;
       for (int kp = 0; kp < nucell; ++kp){
         int idx = (k*sysdim+a)*fftdim+kp*sysdim+b;
-        sum += DM_all[0][idx].r;
+        sum += DM_all[0][idx].real;
       }
       sum /= double(nucell-k);
       for (int kp = k; kp < nucell; ++kp){
         int idx = (k*sysdim+a)*fftdim+kp*sysdim+b;
         int jdx = (kp*sysdim+b)*fftdim+k*sysdim+a;
-        DM_all[0][idx].r -= sum;
-        DM_all[0][jdx].r  = DM_all[0][idx].r;
+        DM_all[0][idx].real -= sum;
+        DM_all[0][jdx].real  = DM_all[0][idx].real;
       }
     }
   }

@@ -3,15 +3,10 @@ phana
 This program reads the binary file created by fix_phonon
 and helps to analyse the phonon related info.
 
-The clapack library is needed to solve the eigen problems,
-which could be downloaded from:
-http://www.netlib.org/clapack/
+I replace the clapack library with intel mkl library, which is needed to solve the eigen problems.
 
 The tricubic library is also needed to to tricubic interpolations,
-which could be obtained from:
-   http://orca.princeton.edu/francois/software/tricubic/
-or
-   http://1drv.ms/1J2WFYk
+which is inclued in the source directory.
 
 The spglib (version 0.7.1) is optionally needed, enabling one to
 evaluate the phonon density of states or vibrational thermal
@@ -26,7 +21,8 @@ LAMMPS units "real", "si", "metal", and "cgs"; in these cases,
 the frequencies are $\nu$ instead of $\omega$.
 
 For updates, please check:
-  http://nes.sjtu.edu.cn/english/research/software.htm
+
+https://github.com/lingtikong/phana.git
 
 Author: Ling-Ti Kong, konglt(at)sjtu.edu.cn
 Sep 2015

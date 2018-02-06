@@ -261,7 +261,7 @@ void Phonon::ldos_rsgf()
 
   dynmat->getDMq(q0);
   for (int i = 0; i < ndim; ++i)
-  for (int j = 0; j < ndim; ++j) Hessian[i][j] = dynmat->DM_q[i][j].r*scale;
+  for (int j = 0; j < ndim; ++j) Hessian[i][j] = dynmat->DM_q[i][j].real*scale;
 
   if (ndim < 300){
     double *egvs = new double [ndim];
@@ -427,7 +427,7 @@ void Phonon::vecanyq()
 {
   char str[MAXLINE];
   double q[3], egvs[ndim];
-  doublecomplex **eigvec = dynmat->DM_q;
+  MKL_Complex16 **eigvec = dynmat->DM_q;
   printf("Please input the filename to output the result [eigvec.dat]: ");
   if (count_words(fgets(str,MAXLINE,stdin)) < 1) strcpy(str,"eigvec.dat");
   FILE *fp = fopen(strtok(str," \t\n\r\f"), "w");
@@ -452,8 +452,8 @@ void Phonon::vecanyq()
         double sum = 0.;
         fprintf(fp,"%d", j+1);
         for (int idim = 0; idim < sysdim; ++idim){
-          fprintf(fp,"  %lg %lg", eigvec[i][ipos+idim].r, eigvec[i][ipos+idim].i);
-          sum += eigvec[i][ipos+idim].r * eigvec[i][ipos+idim].r + eigvec[i][ipos+idim].i * eigvec[i][ipos+idim].i;
+          fprintf(fp,"  %lg %lg", eigvec[i][ipos+idim].real, eigvec[i][ipos+idim].imag);
+          sum += eigvec[i][ipos+idim].real * eigvec[i][ipos+idim].real + eigvec[i][ipos+idim].imag * eigvec[i][ipos+idim].imag;
         }
         fprintf(fp,"  : %lg\n", sqrt(sum));
       }
@@ -948,7 +948,7 @@ void Phonon::ldos_egv()
 
   // memory and pointer for eigenvalues and eigenvectors
   double egval[ndim], offset=fmin-0.5*df;
-  doublecomplex **egvec = dynmat->DM_q;
+  MKL_Complex16 **egvec = dynmat->DM_q;
 
   printf("\nNow to compute the phonons and DOSs "); fflush(stdout);
   for (int iq = 0; iq < nq; ++iq){
@@ -967,7 +967,7 @@ void Phonon::ldos_egv()
         for (int ilocal = 0; ilocal < nlocal; ++ilocal){
           int ipos = locals[ilocal]*sysdim;
           for (int jdim = 0; jdim < sysdim; ++jdim){
-            double dr = egvec[idim][ipos+jdim].r, di = egvec[idim][ipos+jdim].i;
+            double dr = egvec[idim][ipos+jdim].real, di = egvec[idim][ipos+jdim].imag;
             double norm = dr * dr + di * di;
             ldos[ilocal][hit][jdim] += wt[iq] * norm;
           }

@@ -5,7 +5,7 @@
 /* ----------------------------------------------------------------------------
  * Constructor used to get info from caller, and prepare other necessary data
  * ---------------------------------------------------------------------------- */
-Interpolate::Interpolate(int nx, int ny, int nz, int ndm, doublecomplex **DM)
+Interpolate::Interpolate(int nx, int ny, int nz, int ndm, MKL_Complex16 **DM)
 {
   Nx = nx;
   Ny = ny;
@@ -79,22 +79,22 @@ void Interpolate::tricubic_init()
     int pmmm = (im*Ny+jm)*Nz+km;
 
     for (int idim=0; idim<ndim; idim++){
-      Dfdx[n][idim].r = (data[p100][idim].r - data[pm00][idim].r) * half;
-      Dfdx[n][idim].i = (data[p100][idim].i - data[pm00][idim].i) * half;
-      Dfdy[n][idim].r = (data[p010][idim].r - data[p0m0][idim].r) * half;
-      Dfdy[n][idim].i = (data[p010][idim].i - data[p0m0][idim].i) * half;
-      Dfdz[n][idim].r = (data[p001][idim].r - data[p00m][idim].r) * half;
-      Dfdz[n][idim].i = (data[p001][idim].i - data[p00m][idim].i) * half;
-      D2fdxdy[n][idim].r = (data[p110][idim].r - data[p1m0][idim].r - data[pm10][idim].r + data[pmm0][idim].r) * one4;
-      D2fdxdy[n][idim].i = (data[p110][idim].i - data[p1m0][idim].i - data[pm10][idim].i + data[pmm0][idim].i) * one4;
-      D2fdxdz[n][idim].r = (data[p101][idim].r - data[p10m][idim].r - data[pm01][idim].r + data[pm0m][idim].r) * one4;
-      D2fdxdz[n][idim].i = (data[p101][idim].i - data[p10m][idim].i - data[pm01][idim].i + data[pm0m][idim].i) * one4;
-      D2fdydz[n][idim].r = (data[p011][idim].r - data[p01m][idim].r - data[p0m1][idim].r + data[p0mm][idim].r) * one4;
-      D2fdydz[n][idim].i = (data[p011][idim].i - data[p01m][idim].i - data[p0m1][idim].i + data[p0mm][idim].i) * one4;
-      D3fdxdydz[n][idim].r = (data[p111][idim].r-data[pm11][idim].r - data[p1m1][idim].r - data[p11m][idim].r +
-                              data[p1mm][idim].r+data[pm1m][idim].r + data[pmm1][idim].r - data[pmmm][idim].r) * one8;
-      D3fdxdydz[n][idim].i = (data[p111][idim].i-data[pm11][idim].i - data[p1m1][idim].i - data[p11m][idim].i +
-                              data[p1mm][idim].i+data[pm1m][idim].i + data[pmm1][idim].i - data[pmmm][idim].i) * one8;
+      Dfdx[n][idim].real = (data[p100][idim].real - data[pm00][idim].real) * half;
+      Dfdx[n][idim].imag = (data[p100][idim].imag - data[pm00][idim].imag) * half;
+      Dfdy[n][idim].real = (data[p010][idim].real - data[p0m0][idim].real) * half;
+      Dfdy[n][idim].imag = (data[p010][idim].imag - data[p0m0][idim].imag) * half;
+      Dfdz[n][idim].real = (data[p001][idim].real - data[p00m][idim].real) * half;
+      Dfdz[n][idim].imag = (data[p001][idim].imag - data[p00m][idim].imag) * half;
+      D2fdxdy[n][idim].real = (data[p110][idim].real - data[p1m0][idim].real - data[pm10][idim].real + data[pmm0][idim].real) * one4;
+      D2fdxdy[n][idim].imag = (data[p110][idim].imag - data[p1m0][idim].imag - data[pm10][idim].imag + data[pmm0][idim].imag) * one4;
+      D2fdxdz[n][idim].real = (data[p101][idim].real - data[p10m][idim].real - data[pm01][idim].real + data[pm0m][idim].real) * one4;
+      D2fdxdz[n][idim].imag = (data[p101][idim].imag - data[p10m][idim].imag - data[pm01][idim].imag + data[pm0m][idim].imag) * one4;
+      D2fdydz[n][idim].real = (data[p011][idim].real - data[p01m][idim].real - data[p0m1][idim].real + data[p0mm][idim].real) * one4;
+      D2fdydz[n][idim].imag = (data[p011][idim].imag - data[p01m][idim].imag - data[p0m1][idim].imag + data[p0mm][idim].imag) * one4;
+      D3fdxdydz[n][idim].real = (data[p111][idim].real-data[pm11][idim].real - data[p1m1][idim].real - data[p11m][idim].real +
+                              data[p1mm][idim].real+data[pm1m][idim].real + data[pmm1][idim].real - data[pmmm][idim].real) * one8;
+      D3fdxdydz[n][idim].imag = (data[p111][idim].imag-data[pm11][idim].imag - data[p1m1][idim].imag - data[p11m][idim].imag +
+                              data[p1mm][idim].imag+data[pm1m][idim].imag + data[pmm1][idim].imag - data[pmmm][idim].imag) * one8;
     }
     n++;
   }
@@ -120,7 +120,7 @@ Interpolate::~Interpolate()
 /* ----------------------------------------------------------------------------
  * Tricubic interpolation, by calling the tricubic library
  * ---------------------------------------------------------------------------- */
-void Interpolate::tricubic(double *qin, doublecomplex *DMq)
+void Interpolate::tricubic(double *qin, MKL_Complex16 *DMq)
 {
   // qin should be in unit of 2*pi/L
   double q[3];
@@ -149,30 +149,30 @@ void Interpolate::tricubic(double *qin, doublecomplex *DMq)
 
   for (int idim = 0; idim < ndim; ++idim){
     for (int i = 0; i < 8; ++i){
-      f[i] = data[vidx[i]][idim].r;
-      dfdx[i] = Dfdx[vidx[i]][idim].r;
-      dfdy[i] = Dfdy[vidx[i]][idim].r;
-      dfdz[i] = Dfdz[vidx[i]][idim].r;
-      d2fdxdy[i] = D2fdxdy[vidx[i]][idim].r;
-      d2fdxdz[i] = D2fdxdz[vidx[i]][idim].r;
-      d2fdydz[i] = D2fdydz[vidx[i]][idim].r;
-      d3fdxdydz[i] = D3fdxdydz[vidx[i]][idim].r;
+      f[i] = data[vidx[i]][idim].real;
+      dfdx[i] = Dfdx[vidx[i]][idim].real;
+      dfdy[i] = Dfdy[vidx[i]][idim].real;
+      dfdz[i] = Dfdz[vidx[i]][idim].real;
+      d2fdxdy[i] = D2fdxdy[vidx[i]][idim].real;
+      d2fdxdz[i] = D2fdxdz[vidx[i]][idim].real;
+      d2fdydz[i] = D2fdydz[vidx[i]][idim].real;
+      d3fdxdydz[i] = D3fdxdydz[vidx[i]][idim].real;
     }
     tricubic_get_coeff(&a[0],&f[0],&dfdx[0],&dfdy[0],&dfdz[0],&d2fdxdy[0],&d2fdxdz[0],&d2fdydz[0],&d3fdxdydz[0]); 
-    DMq[idim].r = tricubic_eval(&a[0],x,y,z);
+    DMq[idim].real = tricubic_eval(&a[0],x,y,z);
     
     for (int i = 0; i < 8; ++i){
-      f[i] = data[vidx[i]][idim].i;
-      dfdx[i] = Dfdx[vidx[i]][idim].i;
-      dfdy[i] = Dfdy[vidx[i]][idim].i;
-      dfdz[i] = Dfdz[vidx[i]][idim].i;
-      d2fdxdy[i] = D2fdxdy[vidx[i]][idim].i;
-      d2fdxdz[i] = D2fdxdz[vidx[i]][idim].i;
-      d2fdydz[i] = D2fdydz[vidx[i]][idim].i;
-      d3fdxdydz[i] = D3fdxdydz[vidx[i]][idim].i;
+      f[i] = data[vidx[i]][idim].imag;
+      dfdx[i] = Dfdx[vidx[i]][idim].imag;
+      dfdy[i] = Dfdy[vidx[i]][idim].imag;
+      dfdz[i] = Dfdz[vidx[i]][idim].imag;
+      d2fdxdy[i] = D2fdxdy[vidx[i]][idim].imag;
+      d2fdxdz[i] = D2fdxdz[vidx[i]][idim].imag;
+      d2fdydz[i] = D2fdydz[vidx[i]][idim].imag;
+      d3fdxdydz[i] = D3fdxdydz[vidx[i]][idim].imag;
     }
     tricubic_get_coeff(&a[0],&f[0],&dfdx[0],&dfdy[0],&dfdz[0],&d2fdxdy[0],&d2fdxdz[0],&d2fdydz[0],&d3fdxdydz[0]); 
-    DMq[idim].i = tricubic_eval(&a[0],x,y,z);
+    DMq[idim].imag = tricubic_eval(&a[0],x,y,z);
   }
 
 return;
@@ -183,7 +183,7 @@ return;
  * the input q should be a vector in unit of (2pi/a 2pi/b 2pi/c).
  * All q components will be rescaled into [0 1).
  * ---------------------------------------------------------------------------- */
-void Interpolate::trilinear(double *qin, doublecomplex *DMq)
+void Interpolate::trilinear(double *qin, MKL_Complex16 *DMq)
 {
   // rescale q[i] into [0 1)
   double q[3];
@@ -233,11 +233,11 @@ void Interpolate::trilinear(double *qin, doublecomplex *DMq)
   
   // now to do the interpolation
   for (int idim = 0; idim < ndim; ++idim){
-    DMq[idim].r = 0.;
-    DMq[idim].i = 0.;
+    DMq[idim].real = 0.;
+    DMq[idim].imag = 0.;
     for (int i = 0; i < 8; ++i){
-      DMq[idim].r += data[vidx[i]][idim].r*fac[i];
-      DMq[idim].i += data[vidx[i]][idim].i*fac[i];
+      DMq[idim].real += data[vidx[i]][idim].real*fac[i];
+      DMq[idim].imag += data[vidx[i]][idim].imag*fac[i];
     }
   }
 
@@ -247,7 +247,7 @@ return;
 /* ----------------------------------------------------------------------------
  * To invoke the interpolation
  * ---------------------------------------------------------------------------- */
-void Interpolate::execute(double *qin, doublecomplex *DMq)
+void Interpolate::execute(double *qin, MKL_Complex16 *DMq)
 {
   UseGamma = 0;
   if (which == 1) // 1: tricubic
@@ -299,9 +299,9 @@ void Interpolate::reset_gamma()
   double const one6 = -1./6., two3 = 2./3.;
 
   for (int idim=0; idim<ndim; idim++){
-    data[0][idim].i = 0.;
-    data[0][idim].r = (data[im2][idim].r + data[ip2][idim].r) * one6
-                    + (data[im1][idim].r + data[ip1][idim].r) * two3;
+    data[0][idim].imag = 0.;
+    data[0][idim].real = (data[im2][idim].real + data[ip2][idim].real) * one6
+                    + (data[im1][idim].real + data[ip1][idim].real) * two3;
   }
 
 return;
